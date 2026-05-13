@@ -161,11 +161,11 @@ const ResultPage = () => {
       try {
         const [resultRes, catRes] = await Promise.all([
           api.get(`/api/checks/${id}`),
-          api.get('/api/categories').catch(() => ({ data: [] }))
+          api.get('/api/categories').catch(() => ({ data: { data: [] } }))
         ]);
         
-        setResult(resultRes.data);
-        setCategoriesData(catRes.data);
+        setResult(resultRes.data?.data || resultRes.data);
+        setCategoriesData(catRes.data?.data || catRes.data || []);
       } catch (err) {
         setError(err.response?.status === 404 ? 'Data tidak ditemukan' : 'Terjadi kesalahan');
       } finally {

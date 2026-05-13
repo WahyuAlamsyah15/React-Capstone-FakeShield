@@ -74,7 +74,7 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'LOGIN_START' });
     try {
       const response = await api.post('/api/auth/login', { email, password });
-      const { token, user } = response.data;
+      const { token, user } = response.data.data;
       localStorage.setItem('fs_token', token);
       localStorage.setItem('fs_user', JSON.stringify(user));
       dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token } });

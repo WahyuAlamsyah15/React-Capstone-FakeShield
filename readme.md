@@ -1,163 +1,134 @@
-# 🛡️ FakeShield Master Technical Documentation
-> **PANDUAN INTEGRASI BACKEND (BFF) — Tim CC26-PSU184**
+# 🛡️ FakeShield Frontend
 
-Dokumen ini disusun untuk memberikan pemahaman mendalam bagi tim Backend mengenai arsitektur, kebutuhan data, dan logika bisnis yang diharapkan oleh Frontend FakeShield.
+> **Platform Deteksi Berita Hoaks Berbasis AI (Natural Language Processing)**
+
+FakeShield adalah aplikasi web modern yang dirancang untuk membantu masyarakat memverifikasi kebenaran informasi. Menggunakan teknologi **AI (Deep Learning)**, platform ini menganalisis karakteristik teks untuk memberikan skor keyakinan apakah sebuah berita tergolong hoaks atau valid.
 
 ---
 
-## 🏗️ 1. Arsitektur Sistem
-Frontend dirancang untuk berinteraksi dengan **Express.js Backend** sebagai API Gateway / BFF (Backend For Frontend).
+## ✨ Fitur Utama
+
+- **🔍 Deteksi Real-time**: Masukkan teks berita dan dapatkan hasil analisis dalam hitungan detik.
+- **📊 Visualisasi Word Attention**: Lihat kata-kata mana yang paling memengaruhi keputusan AI dalam mendeteksi hoaks.
+- **📈 Dashboard Statistik**: Pantau tren penyebaran hoaks secara global dan kategori distribusi hasil pemeriksaan.
+- **🕒 Riwayat Pemeriksaan**: Simpan dan akses kembali hasil pemeriksaan Anda kapan saja.
+- **📰 Berita Terkini**: Integrasi dengan NewsAPI untuk menyajikan berita terbaru yang sedang hangat.
+- **📱 Responsive Design**: Tampilan yang optimal di perangkat desktop maupun mobile.
+
+---
+
+## 🚀 Tech Stack
+
+Frontend ini dibangun dengan teknologi modern untuk performa dan pengalaman pengguna yang maksimal:
+
+- **Core**: [React.js 19](https://react.dev/) & [Vite](https://vitejs.dev/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/) (Utility-first CSS framework)
+- **Routing**: [React Router DOM v6](https://reactrouter.com/)
+- **Data Visualization**: [Recharts](https://recharts.org/)
+- **HTTP Client**: [Axios](https://axios-http.com/)
+- **State Management**: React Context API (untuk Autentikasi)
+- **Icons**: SVG based icons
+
+---
+
+## 🛠️ Persiapan Lingkungan
+
+### Prasyarat
+- [Node.js](https://nodejs.org/) (versi 18 ke atas disarankan)
+- [npm](https://www.npmjs.com/) atau [yarn](https://yarnpkg.com/)
+
+### Instalasi
+1. Clone repositori ini:
+   ```bash
+   git clone <repository-url>
+   ```
+2. Masuk ke direktori project:
+   ```bash
+   cd fakeshield-frontend
+   ```
+3. Instal dependensi:
+   ```bash
+   npm install
+   ```
+
+### Konfigurasi Environment
+Buat file `.env` di root direktori `fakeshield-frontend` dan tambahkan variabel berikut:
+```env
+VITE_API_URL=http://localhost:5000
+```
+*Sesuaikan URL dengan alamat backend Express Anda.*
+
+---
+
+## 🏃 Memulai Pengembangan
+
+Jalankan server pengembangan lokal:
+```bash
+npm run dev
+```
+Aplikasi akan berjalan di `http://localhost:5173`.
+
+### Perintah Lainnya
+- `npm run build`: Membangun aplikasi untuk produksi (output di folder `dist`).
+- `npm run lint`: Menjalankan linter untuk mengecek kualitas kode.
+- `npm run preview`: Melihat hasil build produksi secara lokal.
+
+---
+
+## 📁 Struktur Proyek
 
 ```text
-[ FRONTEND (Vite/React) ] 
-          │
-          ▼ (REST API + JWT)
-[ BACKEND (Express.js) ] ◀───▶ [ DATABASE (PostgreSQL) ]
-          │
-          ▼ (HTTP Request)
-[ AI SERVICE (FastAPI) ] ◀───▶ [ ML MODEL (.keras) ]
+fakeshield-frontend/
+├── public/              # Aset publik (favicon, dll)
+├── src/
+│   ├── api/             # Konfigurasi Axios & interceptor
+│   ├── assets/          # Gambar dan file statis
+│   ├── components/      # Komponen UI reusable (Navbar, StatCard, dll)
+│   ├── context/         # AuthContext untuk manajemen session
+│   ├── hooks/           # Custom React Hooks
+│   ├── pages/           # Komponen Halaman (Dashboard, History, Result, Auth)
+│   ├── utils/           # Helper functions & formatters
+│   ├── App.jsx          # Root routing & layout
+│   └── main.jsx         # Entry point aplikasi
+├── .env                 # Variabel lingkungan (API URL)
+├── tailwind.config.js   # Konfigurasi Tailwind CSS
+└── vite.config.js       # Konfigurasi Vite
 ```
 
 ---
 
-## 🔐 2. Autentikasi & Security
-- **Header:** `Authorization: Bearer <token>`
-- **Token Storage:** `localStorage` (key: `fs_token`)
-- **JWT Standard:** `HS256`, Payload: `{ id: "uuid" }`
+## 📡 Panduan Integrasi API (Developer Guide)
+
+Frontend berkomunikasi dengan Backend (Express.js) melalui REST API. Berikut adalah rute-rute utama yang digunakan:
+
+### 🔐 Autentikasi (`/api/auth`)
+- `POST /login`: Mendapatkan JWT Token.
+- `POST /register`: Pendaftaran user baru.
+- `GET /me`: Verifikasi status login & ambil profil user.
+
+### 🔍 Deteksi & Riwayat (`/api/checks` & `/api/history`)
+- `POST /api/checks`: Kirim teks untuk dianalisis.
+- `GET /api/checks/:id`: Ambil detail hasil analisis spesifik.
+- `GET /api/history`: Ambil daftar riwayat pemeriksaan (mendukung pagination).
+
+### 📊 Statistik (`/api/stats`, `/api/trends`, `/api/categories`)
+- `GET /api/stats`: Mengambil angka total checks, total hoaks, dan akurasi model.
+- `GET /api/trends`: Data grafik tren hoaks per hari (7 hari terakhir).
+- `GET /api/categories`: Distribusi hasil pemeriksaan berdasarkan tingkat keyakinan.
 
 ---
 
-## 📡 3. Spesifikasi API Lengkap (JSON Request/Response)
-
-### 🔹 AUTHENTICATION (`/api/auth`)
-
-#### `POST /register`
-- **Request Body:**
-  ```json
-  { "name": "Wahyu", "email": "wahyu@email.com", "password": "password123" }
-  ```
-- **Response (201 Success):**
-  ```json
-  {
-    "message": "Registrasi berhasil, silakan login untuk melanjutkan",
-    "user": { "id": "uuid", "name": "Wahyu", "email": "wahyu@email.com", "created_at": "ISO-Date" }
-  }
-  ```
-- **Error (409):** `{ "message": "Email sudah terdaftar" }`
-
-#### `POST /login`
-- **Request Body:**
-  ```json
-  { "email": "wahyu@email.com", "password": "password123" }
-  ```
-- **Response (200 Success):**
-  ```json
-  {
-    "token": "eyJhbG...",
-    "user": { "id": "uuid", "name": "Wahyu", "email": "wahyu@email.com", "created_at": "ISO-Date" }
-  }
-  ```
-
-#### `GET /me`
-- **Auth Required:** Yes
-- **Response (200 Success):**
-  ```json
-  { "id": "uuid", "name": "Wahyu", "email": "wahyu@email.com", "created_at": "ISO-Date" }
-  ```
+## 🚨 Catatan Penting
+- **Token Security**: Token JWT disimpan di `localStorage` dengan key `fs_token`.
+- **Response Format**: Frontend mengharapkan response dalam format objek yang dibungkus properti `data` (misal: `res.data.data`).
+- **Error Handling**: Setiap error dari backend wajib mengirimkan field `message` untuk ditampilkan di UI.
 
 ---
 
-### 🔹 DETECTION ENGINE (`/api/checks`)
-
-#### `POST /`
-Submit teks untuk dianalisis AI. Backend harus meneruskan ke FastAPI `/predict`.
-- **Auth Required:** Yes
-- **Request Body:** `{ "text": "Isi berita minimal 10 karakter..." }`
-- **Response (201 Success):**
-  ```json
-  {
-    "id": "uuid",
-    "text": "Full text...",
-    "label": "HOAX",
-    "confidence": 0.87,
-    "suspiciousWords": ["hoax", "menipu"],
-    "createdAt": "ISO-Date"
-  }
-  ```
-- **Error (503):** `{ "message": "Layanan analisis sedang tidak tersedia" }` (FastAPI Down)
-
-#### `GET /history`
-- **Auth Required:** Yes
-- **Query Params:** `?page=1&limit=10`
-- **Response (200 Success):**
-  ```json
-  {
-    "data": [
-      { "id": "uuid", "text": "Truncated text...", "label": "HOAX", "confidence": 0.95, "createdAt": "ISO-Date" }
-    ],
-    "pagination": { "page": 1, "limit": 10, "total": 50, "totalPages": 5 }
-  }
-  ```
+## 👥 Tim Pengembang (CC26-PSU184)
+- **Wahyu Alamsyah** - Frontend Developer
+- **Ezhar Mahesa** - Frontend Developer
+- **Maulana Dzaky** - AI/ML Engineer
 
 ---
-
-### 🔹 STATS & TRENDS (`/api/stats`, `/api/trends`, `/api/categories`, `/api/news`)
-
-#### `GET /stats`
-- **Auth:** Optional (Jika ada token, kembalikan statistik user; jika tidak, kembalikan statistik global).
-- **Response:**
-  ```json
-  { "totalChecks": 1500, "totalHoax": 450, "accuracy": 92.5 }
-  ```
-
-#### `GET /trends`
-- **Auth Required:** Yes
-- **Response:** Array 7 objek (7 hari terakhir).
-  ```json
-  [
-    { "date": "2026-05-12", "hoaxCount": 5, "validCount": 10 }
-  ]
-  ```
-
-#### `GET /categories`
-- **Auth:** Optional
-- **Logika Mapping (PENTING):**
-  - Confidence >= 0.90 ➔ `"Sangat Terindikasi Hoaks"`
-  - Confidence 0.70 - 0.89 ➔ `"Terindikasi Hoaks"`
-  - Confidence 0.50 - 0.69 ➔ `"Perlu Verifikasi"`
-  - Confidence < 0.50 ➔ `"Kemungkinan Valid"`
-- **Response:**
-  ```json
-  [ { "name": "Sangat Terindikasi Hoaks", "count": 45 }, ... ]
-  ```
-
-#### `GET /api/news`
-Mengambil berita terbaru dari NewsAPI.
-- **Response (200):**
-  ```json
-  [
-    { "title": "Judul Berita", "source": "Detik", "url": "http...", "publishedAt": "ISO-Date" }
-  ]
-  ```
-
----
-
-## 🚨 4. Penanganan Error (Standar Backend)
-Backend **WAJIB** mengirimkan field `message` dalam setiap respons error agar UI dapat menampilkan pesan yang sesuai di UI.
-
-- **Status 400:** Validasi input gagal.
-- **Status 401:** Token expired/tidak valid (Frontend akan otomatis logout).
-- **Status 403:** Tidak punya hak akses ke resource.
-- **Status 404:** Data tidak ditemukan.
-- **Status 503:** Service AI (FastAPI) tidak merespons.
-
----
-
-## 🌐 5. CORS Configuration
-Backend harus mengizinkan origin: `http://localhost:5173` dan domain production.
-
----
-
-## 👥 Tim CC26-PSU184
-- **Frontend:** Wahyu Alamsyah, Ezhar Mahesa
-- **AI Engineer:** Maulana Dzaky
+© 2026 FakeShield. Dibuat dengan ❤️ untuk Indonesia yang lebih cerdas informasi.

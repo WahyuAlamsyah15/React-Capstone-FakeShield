@@ -69,10 +69,12 @@ const Dashboard = () => {
 
   const fetchHistory = async () => {
     try {
-      const histRes = await api.get('/api/checks/history?limit=5');
-      setHistory({ data: histRes.data?.data || [], loading: false, error: false });
+      const histRes = await api.get('/api/history?limit=5');
+      const data = histRes.data?.data || [];
+      const pagination = histRes.data?.pagination || histRes.data?.meta || {};
+      setHistory({ data, pagination, loading: false, error: false });
     } catch (err) {
-      setHistory({ data: [], loading: false, error: true });
+      setHistory({ data: [], pagination: {}, loading: false, error: true });
     }
   };
 
@@ -80,7 +82,7 @@ const Dashboard = () => {
     setIsAnalyzing(true);
     try {
       const response = await api.get(`/api/checks/${id}`);
-      setActiveResult(response.data);
+      setActiveResult(response.data?.data || response.data);
       // Refresh history
       fetchHistory();
     } catch (err) {
@@ -106,8 +108,8 @@ const Dashboard = () => {
           }))
         ]);
         
-        setNews({ data: newsRes.data, loading: false, error: false });
-        setStats({ ...statsRes.data, loading: false });
+        setNews({ data: newsRes.data?.data || newsRes.data || [], loading: false, error: false });
+        setStats({ ...(statsRes.data?.data || statsRes.data), loading: false });
       } catch {
         setNews({ data: [], loading: false, error: true });
         setStats({
@@ -127,22 +129,24 @@ const Dashboard = () => {
       const fetchAuthData = async () => {
         try {
           const [trendsRes, catRes, statsRes] = await Promise.all([
-            api.get('/api/trends').catch(() => ({ data: [] })),
-            api.get('/api/categories').catch(() => ({ data: [] })),
+            api.get('/api/trends').catch(() => ({ data: { data: [] } })),
+            api.get('/api/categories').catch(() => ({ data: { data: [] } })),
             api.get('/api/stats').catch(() => ({
               data: {
-                totalChecks: 0,
-                totalHoax: 0,
-                accuracy: null,
-                accuracyStatus: 'placeholder',
-                accuracyMessage: 'Akurasi model belum tersedia'
+                data: {
+                  totalChecks: 0,
+                  totalHoax: 0,
+                  accuracy: null,
+                  accuracyStatus: 'placeholder',
+                  accuracyMessage: 'Akurasi model belum tersedia'
+                }
               }
             }))
           ]);
           
-          setTrends({ data: trendsRes.data, loading: false, error: false });
-          setCategories({ data: catRes.data, loading: false, error: false });
-          setStats({ ...statsRes.data, loading: false });
+          setTrends({ data: trendsRes.data?.data || [], loading: false, error: false });
+          setCategories({ data: catRes.data?.data || [], loading: false, error: false });
+          setStats({ ...(statsRes.data?.data || statsRes.data), loading: false });
           fetchHistory();
         } catch {
           // Silent catch

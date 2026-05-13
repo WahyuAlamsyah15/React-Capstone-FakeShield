@@ -19,10 +19,10 @@ const History = () => {
     const fetchHistory = async () => {
       setHistory(prev => ({ ...prev, loading: true }));
       try {
-        const res = await api.get(`/api/checks/history?page=${page}&limit=10`);
+        const res = await api.get(`/api/history?page=${page}&limit=10`);
         setHistory({
           data: res.data.data,
-          pagination: res.data.pagination,
+          pagination: res.data.pagination || res.data.meta, // Mendukung 'pagination' atau 'meta' dari BE
           loading: false,
           error: null
         });
