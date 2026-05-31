@@ -85,16 +85,23 @@ const Dashboard = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
-    // Tangani scroll jika ada hash di URL (misal: #check-section)
-    if (window.location.hash === '#check-section') {
-      const element = document.getElementById('check-section');
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-        // Fokuskan textarea jika memungkinkan untuk UX yang lebih baik
-        const textarea = element.querySelector('textarea');
-        if (textarea) textarea.focus();
+    const handleHashScroll = () => {
+      if (window.location.hash === '#check-section') {
+        const element = document.getElementById('check-section');
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+          const textarea = element.querySelector('textarea');
+          if (textarea) textarea.focus();
+        }
       }
-    }
+    };
+
+    // Jalankan saat komponen dimuat
+    handleHashScroll();
+
+    // Jalankan saat hash berubah (berguna jika user sudah di Dashboard lalu klik navbar Dashboard lagi)
+    window.addEventListener('hashchange', handleHashScroll);
+    return () => window.removeEventListener('hashchange', handleHashScroll);
   }, []);
 
   const scrollToResult = () => {
@@ -286,7 +293,7 @@ const Dashboard = () => {
                <div className="flex items-center gap-3">
                  <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                  <h3 className="font-bold text-gray-900 uppercase text-[13px] tracking-widest">
-                   {activeResult ? 'HASIL ANALISIS TERBARU' : 'STATISTIK DETEKSI GLOBAL'}
+                   {activeResult ? 'HASIL ANALISIS TERBARU' : 'STATISTIK DETEKSI GLOBAL USER'}
                  </h3>
                </div>
                <div className="flex items-center gap-4">
@@ -411,16 +418,17 @@ const Dashboard = () => {
                     </div>
                   ) : (
                     /* Charts Row */
-                    <div className="flex-1 flex flex-col md:flex-row items-center gap-6 min-h-[300px]">
-                      <div className="flex-1 w-full h-[250px] flex items-center justify-center bg-slate-50/50 rounded-xl border border-dashed border-gray-100">
+                    <div className="flex-1 flex flex-col md:flex-row items-stretch md:items-center gap-8 min-h-[300px] md:min-h-[300px]">
+                      {/* Trend Chart Container */}
+                      <div className="flex-1 w-full h-[300px] md:h-[250px] flex items-center justify-center bg-slate-50/50 rounded-xl border border-dashed border-gray-100 p-2">
                           {displayTrends.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
-                              <AreaChart data={displayTrends}>
+                              <AreaChart data={displayTrends} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                                <XAxis dataKey="date" tickFormatter={(d) => new Date(d).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'})} tick={{fontSize: 12}} axisLine={false} tickLine={false} />
-                                <YAxis tick={{fontSize: 12}} axisLine={false} tickLine={false} />
+                                <XAxis dataKey="date" tickFormatter={(d) => new Date(d).toLocaleDateString('id-ID', {day: 'numeric', month: 'short'})} tick={{fontSize: 10}} axisLine={false} tickLine={false} />
+                                <YAxis tick={{fontSize: 10}} axisLine={false} tickLine={false} />
                                 <Tooltip />
-                                <Legend iconType="circle" wrapperStyle={{fontSize: 12}} />
+                                <Legend iconType="circle" wrapperStyle={{fontSize: 10, paddingTop: 10}} />
                                 <Area type="monotone" dataKey="hoaxCount" name="Hoaks" stroke="#DC2626" fill="#FEE2E2" strokeWidth={2} />
                                 <Area type="monotone" dataKey="validCount" name="Valid" stroke="#16A34A" fill="#DCFCE7" strokeWidth={2} />
                               </AreaChart>
@@ -432,7 +440,9 @@ const Dashboard = () => {
                             </div>
                           )}
                       </div>
-                      <div className="w-full md:w-[300px] h-[250px] relative flex items-center justify-center bg-slate-50/50 rounded-xl border border-dashed border-gray-100">
+
+                      {/* Pie Chart Container */}
+                      <div className="w-full md:w-[300px] h-[300px] md:h-[250px] relative flex items-center justify-center bg-slate-50/50 rounded-xl border border-dashed border-gray-100 p-2">
                           {displayCategories.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
                               <PieChart>
@@ -440,8 +450,8 @@ const Dashboard = () => {
                                   data={displayCategories} 
                                   cx="50%" 
                                   cy="50%" 
-                                  innerRadius={65} 
-                                  outerRadius={85} 
+                                  innerRadius={60} 
+                                  outerRadius={80} 
                                   paddingAngle={5}
                                   dataKey="count" 
                                   nameKey="name"
@@ -475,10 +485,10 @@ const Dashboard = () => {
                           {/* Label Tengah Donut */}
                           {displayCategories.length > 0 && (
                             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-8">
-                               <span className="text-[22px] font-black text-gray-900 leading-none">
+                               <span className="text-[20px] md:text-[22px] font-black text-gray-900 leading-none">
                                  {displayCategories.reduce((acc, curr) => acc + (curr.count || 0), 0)}
                                </span>
-                               <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Total Data</span>
+                               <span className="text-[8px] md:text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Total Data</span>
                             </div>
                           )}
                       </div>
