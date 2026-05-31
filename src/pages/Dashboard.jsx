@@ -83,11 +83,11 @@ const Dashboard = () => {
     return realData;
   }, [trends.data]);
 
-  const hasRealData = normalizedCategories.length > 0;
-  const displayCategories = hasRealData ? normalizedCategories : [
-    { name: 'Hoaks', count: 97 },
-    { name: 'Valid', count: 144 }
-  ];
+  const hasRealData = stats.totalChecks > 0;
+  const displayCategories = hasRealData ? [
+    { name: 'Hoaks', count: stats.totalHoax },
+    { name: 'Valid', count: stats.totalValid }
+  ].filter(item => item.count > 0) : [];
 
   const [activeResult, setActiveResult] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
