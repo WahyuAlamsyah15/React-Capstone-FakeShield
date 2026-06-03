@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '',
-  timeout: 15000,
+  baseURL: import.meta.env.VITE_API_URL || 'https://backend-production-4536.up.railway.app',
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -10,8 +10,8 @@ const api = axios.create({
 
 // Instance khusus untuk request publik (tanpa token)
 export const publicApi = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '',
-  timeout: 15000,
+  baseURL: import.meta.env.VITE_API_URL || 'https://backend-production-4536.up.railway.app',
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
