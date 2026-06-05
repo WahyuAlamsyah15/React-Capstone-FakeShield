@@ -52,6 +52,7 @@ const CheckForm = ({ onResult, onLoading }) => {
       {!isAuthenticated && (
         <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800 flex items-center gap-3">
           <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <p>AI hanya bisa menganalisis isi konten berita.</p>
           <p>Anda dapat melakukan analisis tanpa login. Hasil tidak akan disimpan di riwayat pribadi Anda.</p>
         </div>
       )}
