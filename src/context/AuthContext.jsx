@@ -3,10 +3,20 @@ import api from '../api/axios';
 
 export const AuthContext = createContext(null);
 
+const STORAGE_KEYS = {
+  TOKEN: 'fs_token',
+  USER: 'fs_user',
+  LOGIN_AT: 'fs_login_at',
+};
+
+const initialToken =
+  localStorage.getItem(STORAGE_KEYS.TOKEN) ||
+  sessionStorage.getItem(STORAGE_KEYS.TOKEN);
+
 const initialState = {
   user: null,
-  token: localStorage.getItem('fs_token') || sessionStorage.getItem('fs_token') || null,
-  isAuthenticated: !!(localStorage.getItem('fs_token') || sessionStorage.getItem('fs_token')),
+  token: initialToken,
+  isAuthenticated: !!initialToken,
   isLoading: true,
 };
 
@@ -14,16 +24,21 @@ const authReducer = (state, action) => {
   switch (action.type) {
     case 'LOGIN_START':
     case 'FETCH_USER_START':
-      return { ...state, isLoading: true };
+      return {
+        ...state,
+        isLoading: true,
+      };
+
     case 'LOGIN_SUCCESS':
     case 'FETCH_USER_SUCCESS':
       return {
         ...state,
         user: action.payload.user,
-        token: action.payload.token || state.token,
+        token: action.payload.token,
         isAuthenticated: true,
         isLoading: false,
       };
+
     case 'REGISTER_SUCCESS':
       return {
         ...state,
@@ -32,6 +47,7 @@ const authReducer = (state, action) => {
         isAuthenticated: false,
         isLoading: false,
       };
+
     case 'LOGIN_FAILURE':
     case 'FETCH_USER_FAILURE':
     case 'LOGOUT':
@@ -42,6 +58,7 @@ const authReducer = (state, action) => {
         isAuthenticated: false,
         isLoading: false,
       };
+
     default:
       return state;
   }
@@ -50,102 +67,168 @@ const authReducer = (state, action) => {
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
+  const getToken = () => {
+    return (
+      localStorage.getItem(STORAGE_KEYS.TOKEN) ||
+      sessionStorage.getItem(STORAGE_KEYS.TOKEN)
+    );
+  };
+
   const logoutSilently = () => {
-    // Daftar semua kunci yang digunakan aplikasi
-    const keys = ['fs_token', 'fs_user', 'fs_login_at'];
-    
-    keys.forEach(key => {
+    Object.values(STORAGE_KEYS).forEach((key) => {
       localStorage.removeItem(key);
       sessionStorage.removeItem(key);
     });
 
-    // Hapus juga data lain yang mungkin ada (fallback)
-    localStorage.clear();
-    sessionStorage.clear();
+    delete api.defaults.headers.common.Authorization;
   };
 
   const logout = () => {
     logoutSilently();
     dispatch({ type: 'LOGOUT' });
-    // Gunakan replace: true untuk hindari user kembali ke halaman ber-token via back button
+
     window.location.replace('/auth');
   };
 
   useEffect(() => {
     const fetchUser = async () => {
-      const token = localStorage.getItem('fs_token') || sessionStorage.getItem('fs_token');
-      const loginAt = localStorage.getItem('fs_login_at') || sessionStorage.getItem('fs_login_at');
-      
+      dispatch({ type: 'FETCH_USER_START' });
+
+      const token = getToken();
+
       if (!token) {
         dispatch({ type: 'FETCH_USER_FAILURE' });
         return;
       }
 
-      // Cek kedaluwarsa 7 hari HANYA jika menggunakan localStorage (Remember Me)
-      if (localStorage.getItem('fs_token') && loginAt) {
-        const sevenDays = 7 * 24 * 60 * 60 * 1000;
-        const isExpired = Date.now() - parseInt(loginAt) > sevenDays;
-        
-        if (isExpired) {
-          logout();
-          return;
+      // Set header Authorization
+      api.defaults.headers.common.Authorization = `Bearer ${token}`;
+
+      // Cek expired hanya untuk Remember Me (localStorage)
+      const localToken = localStorage.getItem(STORAGE_KEYS.TOKEN);
+
+      if (localToken) {
+        const loginAt = localStorage.getItem(STORAGE_KEYS.LOGIN_AT);
+
+        if (loginAt) {
+          const sevenDays = 7 * 24 * 60 * 60 * 1000;
+
+          const isExpired =
+            Date.now() - parseInt(loginAt, 10) > sevenDays;
+
+          if (isExpired) {
+            logoutSilently();
+            dispatch({ type: 'LOGOUT' });
+            window.location.replace('/auth');
+            return;
+          }
         }
       }
-      
+
       try {
         const response = await api.get('/api/auth/me');
-        const user = response.data;
+
         dispatch({
           type: 'FETCH_USER_SUCCESS',
-          payload: { user, token },
+          payload: {
+            user: response.data,
+            token,
+          },
         });
       } catch (error) {
+        logoutSilently();
         dispatch({ type: 'FETCH_USER_FAILURE' });
       }
     };
 
     fetchUser();
-  }, [state.token]);
+  }, []);
 
   const login = async (email, password, remember = false) => {
     dispatch({ type: 'LOGIN_START' });
+
     try {
-      const response = await api.post('/api/auth/login', { email, password });
+      const response = await api.post('/api/auth/login', {
+        email,
+        password,
+      });
+
       const { token, user } = response.data.data;
-      
-      // Pilih storage: localStorage (permanen) atau sessionStorage (sementara)
+
+      // Bersihkan storage lama
+      logoutSilently();
+
       const storage = remember ? localStorage : sessionStorage;
-      
-      storage.setItem('fs_token', token);
-      storage.setItem('fs_user', JSON.stringify(user));
-      storage.setItem('fs_login_at', Date.now().toString());
-      
-      dispatch({ type: 'LOGIN_SUCCESS', payload: { user, token } });
-      return { success: true };
+
+      storage.setItem(STORAGE_KEYS.TOKEN, token);
+      storage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+      storage.setItem(STORAGE_KEYS.LOGIN_AT, Date.now().toString());
+
+      api.defaults.headers.common.Authorization = `Bearer ${token}`;
+
+      dispatch({
+        type: 'LOGIN_SUCCESS',
+        payload: {
+          user,
+          token,
+        },
+      });
+
+      return {
+        success: true,
+      };
     } catch (error) {
       dispatch({ type: 'LOGIN_FAILURE' });
-      throw new Error(error.response?.data?.message || 'Login failed');
+
+      throw new Error(
+        error.response?.data?.message || 'Login failed'
+      );
     }
   };
 
   const register = async (name, email, password) => {
     dispatch({ type: 'LOGIN_START' });
+
     try {
-      const response = await api.post('/api/auth/register', { name, email, password });
-      logoutSilently(); // Bersihkan sisa session lama
-      dispatch({ type: 'REGISTER_SUCCESS' });
+      const response = await api.post('/api/auth/register', {
+        name,
+        email,
+        password,
+      });
+
+      logoutSilently();
+
+      dispatch({
+        type: 'REGISTER_SUCCESS',
+      });
+
       return {
         success: true,
-        message: response.data?.message || 'Registrasi berhasil, silakan login untuk melanjutkan',
+        message:
+          response.data?.message ||
+          'Registrasi berhasil, silakan login untuk melanjutkan',
       };
     } catch (error) {
       dispatch({ type: 'LOGIN_FAILURE' });
-      throw new Error(error.response?.data?.message || 'Registration failed');
+
+      throw new Error(
+        error.response?.data?.message || 'Registration failed'
+      );
     }
   };
 
+  const value = {
+    user: state.user,
+    token: state.token,
+    isAuthenticated: state.isAuthenticated,
+    isLoading: state.isLoading,
+    login,
+    logout,
+    register,
+  };
+
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, register }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
