@@ -14,10 +14,8 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between h-16">
         <div className="flex items-center gap-12 h-full">
           <Link to="/" onClick={closeMenu} className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-[#1E293B] rounded-lg flex items-center justify-center shadow-sm group-hover:bg-slate-800 transition-colors">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              </svg>
+            <div className="w-10 h-10 flex items-center justify-center">
+              <img src="/logo.png" alt="FakeShield Logo" className="w-full h-full object-contain" />
             </div>
             <span className="font-bold text-xl tracking-wide text-gray-900">FAKESHIELD</span>
           </Link>
